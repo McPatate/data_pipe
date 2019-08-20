@@ -2,6 +2,7 @@ import sys
 import random
 import math
 import json
+import base64
 import urllib.request
 from utils import rabbitmq
 
@@ -15,7 +16,7 @@ def round_half_up(n):
 def imgs_gen():
     with open('urls.txt') as urls:
         for url in urls:
-            contents = str(urllib.request.urlopen(url).read())
+            contents = urllib.request.urlopen(url).read()
             yield contents
 
 def prepare_payload(obj_type, message):
@@ -40,7 +41,7 @@ if __name__ == '__main__':
         ig = imgs_gen()
         try:
             for i in range(0, MAX_OBJ_FETCH):
-                message = prepare_payload(obj_type, next(ig))
+                message = prepare_payload(obj_type, base64.b64encode(next(ig)))
                 chan.basic_publish(
                     exchange='',
                     routing_key='processing_queue',
