@@ -17,6 +17,9 @@ class TestExtract(unittest.TestCase):
         message = 'The answer is *wait for a couple million years* 42'
         payload = extract.prepare_payload(obj_type, message)
         self.assertEqual('{ "objType":"LogObj", "message":"The answer is *wait for a couple million years* 42" }', payload)
+    def test_base64_string(self):
+        byte_string = b'hello'
+        self.assertEqual('aGVsbG8=', extract.base64_string(byte_string))
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,7 @@ import base64
 import urllib.request
 from utils import rabbitmq
 
-MAX_OBJ_FETCH = 15
+MAX_OBJ_FETCH = 3
 rmq = rabbitmq.RMQHelper()
 
 def round_half_up(n):
@@ -16,8 +16,11 @@ def round_half_up(n):
 def imgs_gen():
     with open('urls.txt') as urls:
         for url in urls:
-            contents = urllib.request.urlopen(url).read()
-            yield contents
+            try:
+                contents = urllib.request.urlopen(url).read()
+                yield contents
+            except urllib.error.HTTPError:
+                yield 'image fetching error'
 
 def prepare_payload(obj_type, message):
     payload = '{ ' + '"objType":"{}", "message":"{}"'.format(obj_type, message) + ' }'
@@ -33,6 +36,9 @@ def receive_callback(ch, method, properties, body):
         properties=rmq.create_properties()
     )
 
+def base64_string(str):
+    return base64.b64encode(str).decode('utf-8')
+
 if __name__ == '__main__':
     input_select = bool(round_half_up(random.uniform(0, 1)))
     if input_select:
@@ -41,14 +47,21 @@ if __name__ == '__main__':
         ig = imgs_gen()
         try:
             for i in range(0, MAX_OBJ_FETCH):
-                message = prepare_payload(obj_type, base64.b64encode(next(ig)).decode('utf-8'))
-                chan.basic_publish(
-                    exchange='',
-                    routing_key='processing_queue',
-                    body=message,
-                    properties=rmq.create_properties()
-                )
-                print('sent msg : {}'.format(message))
+                msg_content = next(ig)
+                if msg_content == 'image fetching error':
+                    chan.basic_publish(
+                        exchange='',
+                        routing_key='logging_queue',
+                        body=prepare_payload('log', msg_content),
+                        properties=rmq.create_properties()
+                    )
+                else:
+                    chan.basic_publish(
+                        exchange='',
+                        routing_key='processing_queue',
+                        body=prepare_payload(obj_type, base64_string(msg_content)),
+                        properties=rmq.create_properties()
+                    )
         except StopIteration:
             print('no more images to fetch')
         except:
