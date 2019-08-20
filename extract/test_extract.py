@@ -12,6 +12,11 @@ class TestExtract(unittest.TestCase):
     def test_fetch_imgs(self):
         ig = extract.imgs_gen()
         self.assertTrue(next(ig))
+    def test_payload_prep(self):
+        obj_type = 'LogObj'
+        message = 'The answer is *wait for a couple million years* 42'
+        payload = extract.prepare_payload(obj_type, message)
+        self.assertEqual('{ "objType":"LogObj", "message":"The answer is *wait for a couple million years* 42" }', payload)
 
 if __name__ == '__main__':
     unittest.main()
