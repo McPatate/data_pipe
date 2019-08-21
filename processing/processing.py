@@ -41,7 +41,7 @@ def prepare_image_payload(msg):
     print('img\'s md5 is {}'.format(msg['md5']))
     with open('img_{}.png'.format(msg['md5']), 'rb') as f:
         grey_img = f.read()
-    msg['image'] = grey_img
+    msg['image'] = img
     return create_json(msg)
 
 # def prepare_log_payload():
@@ -55,7 +55,6 @@ def receive_callback(ch, method, properties, body):
     chan = rmq.open_channel()
     if obj['objType'] == 'img':
         payload = prepare_image_payload(obj)
-        print(payload)
     # else if obj['objType'] == 'log':
     #     payload = prepare_log_payload()
     chan.basic_publish(
